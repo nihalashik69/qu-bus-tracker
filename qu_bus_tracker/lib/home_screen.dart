@@ -238,8 +238,9 @@ class _HomeScreenState extends State<HomeScreen> {
       debugPrint('ConvexBusService init error: $e');
     }
 
-    // Get current location
-    await _getCurrentLocation();
+    // Browser permission prompts must be started by a user gesture.
+    if (!mounted) return;
+    setState(() => _isLoading = false);
   }
 
   Future<void> _getCurrentLocation() async {
@@ -251,9 +252,19 @@ class _HomeScreenState extends State<HomeScreen> {
           _currentLocation = location;
           _isLoading = false;
         });
+        await _mapController?.animateCamera(
+          CameraUpdate.newLatLng(location),
+        );
       } else {
         if (!mounted) return;
         setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Location is unavailable. Use HTTPS and allow location access in your browser settings.',
+            ),
+          ),
+        );
       }
     } catch (e) {
       print('Error getting location: $e');
@@ -282,22 +293,6 @@ class _HomeScreenState extends State<HomeScreen> {
       await _mapController!.animateCamera(CameraUpdate.zoomOut());
     } catch (e) {
       debugPrint('Zoom out error: $e');
-    }
-  }
-
-  Future<void> _resetMapPosition() async {
-    if (_mapController == null) return;
-    try {
-      await _mapController!.animateCamera(
-        CameraUpdate.newCameraPosition(
-          const CameraPosition(
-            target: _quCenter,
-            zoom: _quZoom,
-          ),
-        ),
-      );
-    } catch (e) {
-      debugPrint('Reset map position error: $e');
     }
   }
 
@@ -1255,15 +1250,15 @@ onTap: () {
             ),
           ),
 
-          // Reset map position button (bottom right, same level as search bus stops)
+          // Request location and center the map (bottom right)
           Positioned(
             bottom: 30,
             right: 16,
             child: FloatingActionButton(
-              heroTag: 'reset_map',
+              heroTag: 'use_my_location',
               mini: true,
               backgroundColor: Colors.white,
-              onPressed: _resetMapPosition,
+              onPressed: _getCurrentLocation,
               child: const Icon(Icons.my_location, color: Color(0xFF8B0000)),
             ),
           ),

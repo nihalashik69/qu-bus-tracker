@@ -5,6 +5,7 @@
 /// UI can call without dealing with low-level platform details.
 ///
 library;
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
@@ -18,6 +19,11 @@ class LocationService {
 
   /// Request location permissions
   static Future<bool> requestLocationPermission() async {
+    if (kIsWeb && Uri.base.scheme != 'https' && Uri.base.host != 'localhost') {
+      debugPrint('Location permission requires HTTPS (except localhost).');
+      return false;
+    }
+
     LocationPermission permission = await Geolocator.checkPermission();
     
     if (permission == LocationPermission.denied) {
@@ -31,9 +37,17 @@ class LocationService {
   /// Get current location
   static Future<LatLng?> getCurrentLocation() async {
     try {
+      if (kIsWeb && Uri.base.scheme != 'https' && Uri.base.host != 'localhost') {
+        debugPrint('Location access requires HTTPS (except localhost).');
+        return null;
+      }
+
       if (!await hasLocationPermission()) {
         bool granted = await requestLocationPermission();
-        if (!granted) return null;
+        if (!granted) {
+          debugPrint('Location permission was not granted.');
+          return null;
+        }
       }
 
       Position position = await Geolocator.getCurrentPosition(
