@@ -16,6 +16,7 @@ fi
 
 export PATH="${flutter_root}/bin:${PATH}"
 export CI=true
+git config --global --add safe.directory "${flutter_root}"
 
 : "${CONVEX_URL:?Set CONVEX_URL in Vercel Project Settings}"
 : "${GOOGLE_MAPS_API_KEY:?Set GOOGLE_MAPS_API_KEY in Vercel Project Settings}"
