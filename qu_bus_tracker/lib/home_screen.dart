@@ -753,17 +753,19 @@ onTap: () {
     return BitmapDescriptor.fromBytes(uint8List);
   }
 
-  // Create a bus-stop icon (blue pin with white bus symbol) - larger size
+  // Create a responsive bus-stop icon (blue pin with white bus symbol).
   Future<BitmapDescriptor> _createStopIcon() async {
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
-    const size = 64.0;
+    final size = (MediaQuery.sizeOf(context).shortestSide * 0.07)
+        .clamp(24.0, 32.0)
+        .toDouble();
 
     // Draw blue pin circle
     final pinPaint = Paint()
       ..color = Colors.blue
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(const Offset(size / 2, size / 2 - 6), 16, pinPaint);
+    canvas.drawCircle(Offset(size / 2, size / 2 - 3), size * 0.25, pinPaint);
 
     // Draw small white bus rectangle inside the pin
     final busPaint = Paint()
@@ -771,8 +773,8 @@ onTap: () {
       ..style = PaintingStyle.fill;
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(size / 2 - 10, size / 2 - 12, 20, 12),
-        const Radius.circular(3),
+        Rect.fromLTWH(size / 2 - size * 0.16, size / 2 - size * 0.19, size * 0.32, size * 0.19),
+        Radius.circular(size * 0.047),
       ),
       busPaint,
     );
@@ -780,9 +782,9 @@ onTap: () {
     // Draw the pin tail (triangle)
     final tailPaint = Paint()..color = Colors.blue;
     final path = Path()
-      ..moveTo(size / 2 - 8, size / 2 + 8)
-      ..lineTo(size / 2 + 8, size / 2 + 8)
-      ..lineTo(size / 2, size - 4)
+      ..moveTo(size / 2 - size * 0.125, size / 2 + size * 0.125)
+      ..lineTo(size / 2 + size * 0.125, size / 2 + size * 0.125)
+      ..lineTo(size / 2, size - size * 0.0625)
       ..close();
     canvas.drawPath(path, tailPaint);
 

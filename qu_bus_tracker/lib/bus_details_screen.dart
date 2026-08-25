@@ -101,6 +101,8 @@ class _BusDetailsScreenState extends State<BusDetailsScreen> {
   Map<String, List<int>> _stopSchedule = {};
   BitmapDescriptor? _liveBusIcon;
   String? _focusedBusId;
+  Timer? _mapLoadTimer;
+  bool _mapLoadFailed = false;
   bool isLightColor(Color color) {
   return color.computeLuminance() > 0.85;
   }
@@ -185,6 +187,13 @@ class _BusDetailsScreenState extends State<BusDetailsScreen> {
   WidgetsBinding.instance.addPostFrameCallback((_) {
     _loadBusData();     // loads routes + buses
     _loadSchedule();    // loads schedule
+    if (kIsWeb) {
+      _mapLoadTimer = Timer(const Duration(seconds: 8), () {
+        if (mounted && _mapController == null) {
+          setState(() => _mapLoadFailed = true);
+        }
+      });
+    }
     LiveBusMarkerIcon.get().then((icon) {
       if (mounted) setState(() => _liveBusIcon = icon);
     });
@@ -284,6 +293,7 @@ class _BusDetailsScreenState extends State<BusDetailsScreen> {
 
   @override
   void dispose() {
+    _mapLoadTimer?.cancel();
     try {
       if (mounted) {
         final convexBusService = Provider.of<ConvexBusService>(context, listen: false);
@@ -670,9 +680,36 @@ final target =
                         ),
                         child: Stack(
                           children: [
-                            GoogleMap(
+                            _mapLoadFailed
+                                ? Container(
+                                    color: const Color(0xFFE5E7EB),
+                                    alignment: Alignment.center,
+                                    child: const Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.map_outlined,
+                                          color: Color(0xFF6B7280),
+                                          size: 32,
+                                        ),
+                                        SizedBox(height: 8),
+                                        Text(
+                                          'Map is unavailable right now',
+                                          style: TextStyle(
+                                            color: Color(0xFF4B5563),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : GoogleMap(
                               onMapCreated: (GoogleMapController controller) {
                                 _mapController = controller;
+                                _mapLoadTimer?.cancel();
+                                if (mounted) {
+                                  setState(() => _mapLoadFailed = false);
+                                }
 
                                 Future.delayed(
                                   const Duration(milliseconds: 300),
