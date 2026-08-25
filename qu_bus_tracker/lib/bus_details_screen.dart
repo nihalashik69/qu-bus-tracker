@@ -14,6 +14,7 @@ library;
 
 import 'dart:async';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
@@ -687,7 +688,7 @@ final target =
                                 zoom: 17.5,
                               ),
                               markers: _getMarkers(),
-                              myLocationEnabled: true,
+                              myLocationEnabled: !kIsWeb,
                               myLocationButtonEnabled: false,
                               zoomControlsEnabled: false,
                               mapType: MapType.satellite,

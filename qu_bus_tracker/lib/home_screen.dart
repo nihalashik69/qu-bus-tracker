@@ -12,6 +12,7 @@
 
 import 'dart:async';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
@@ -261,7 +262,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'Location is unavailable. Use HTTPS and allow location access in your browser settings.',
+              'Location is unavailable. Allow location for this site in Chrome, turn on phone Location, then try again.',
             ),
           ),
         );
@@ -756,13 +757,13 @@ onTap: () {
   Future<BitmapDescriptor> _createStopIcon() async {
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
-    const size = 128.0; // doubled
+    const size = 64.0;
 
     // Draw blue pin circle
     final pinPaint = Paint()
       ..color = Colors.blue
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(const Offset(size/2, size/2 - 12), 32, pinPaint);
+    canvas.drawCircle(const Offset(size / 2, size / 2 - 6), 16, pinPaint);
 
     // Draw small white bus rectangle inside the pin
     final busPaint = Paint()
@@ -770,8 +771,8 @@ onTap: () {
       ..style = PaintingStyle.fill;
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(size/2 - 20, size/2 - 24, 40, 24),
-        const Radius.circular(6),
+        Rect.fromLTWH(size / 2 - 10, size / 2 - 12, 20, 12),
+        const Radius.circular(3),
       ),
       busPaint,
     );
@@ -779,9 +780,9 @@ onTap: () {
     // Draw the pin tail (triangle)
     final tailPaint = Paint()..color = Colors.blue;
     final path = Path()
-      ..moveTo(size/2 - 16, size/2 + 16)
-      ..lineTo(size/2 + 16, size/2 + 16)
-      ..lineTo(size/2, size - 8)
+      ..moveTo(size / 2 - 8, size / 2 + 8)
+      ..lineTo(size / 2 + 8, size / 2 + 8)
+      ..lineTo(size / 2, size - 4)
       ..close();
     canvas.drawPath(path, tailPaint);
 
@@ -818,7 +819,7 @@ onTap: () {
                             zoom: _quZoom,
                           ),
                           markers: _getMarkers(convexBusService),
-                          myLocationEnabled: true,
+                          myLocationEnabled: !kIsWeb,
                           myLocationButtonEnabled: false,
                           zoomControlsEnabled: false,
                           onTap: (LatLng position) {
@@ -857,7 +858,7 @@ onTap: () {
 
           // Clock showing current time (small rectangle above destination button)
           Positioned(
-            top: 60,
+            top: 16,
             left: 20,
             right: 20,
             child: Container(
@@ -897,7 +898,7 @@ onTap: () {
 
           // Destination Selection Button (moved to top)
           Positioned(
-            top: 100,
+            top: 58,
             left: 20,
             right: 20,
             child: Container(
