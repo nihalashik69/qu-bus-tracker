@@ -68,14 +68,21 @@ The web build needs two things the native builds get for free:
   deployment in `lib/convex_config.dart`)
 - a **browser** Google Maps JavaScript API key
 
-**Vercel** — set the project root directory to `qu_bus_tracker` and add these
-project environment variables:
+**Vercel** — add these project environment variables:
 
 - `CONVEX_URL`: the Convex deployment URL
 - `GOOGLE_MAPS_API_KEY`: optional override for the browser Maps key. The working
   key is already committed in `web/index.html` (and in the Dart fallback), so a
   deployment with no env vars still shows the map. Only set this if you rotate
   the key.
+
+Root Directory works either way: leave it empty (the repository `vercel.json`
+builds `qu_bus_tracker` and publishes `qu_bus_tracker/build/web`) or set it to
+`qu_bus_tracker` (that folder's own `vercel.json` and
+`scripts/vercel-build.sh` take over). `scripts/vercel-build.sh` cds into the
+Flutter project itself, so both layouts produce the same output — a deployment
+that reports "Ready" but serves a 404 is what happens when neither build runs
+and Vercel publishes an empty directory.
 
 `scripts/vercel-build.sh` downloads the pinned Flutter toolchain, runs
 `flutter pub get`, builds with both dart-defines, substitutes the Maps key in

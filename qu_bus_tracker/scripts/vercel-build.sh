@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Run from the Flutter project directory no matter where Vercel invokes this
+# from: the project root is `qu_bus_tracker`, but a Vercel project whose "Root
+# Directory" is unset starts the build at the repository root instead.
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
 flutter_version="${FLUTTER_VERSION:-3.32.4}"
 flutter_root="${HOME}/.cache/flutter-sdk-${flutter_version}"
 
