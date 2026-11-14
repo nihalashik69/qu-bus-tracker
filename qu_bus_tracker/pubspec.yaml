@@ -44,6 +44,9 @@ dependencies:
   # Maps integration
   google_maps_flutter: ^2.5.0
 
+  # Web-only DOM access (used to load the Google Maps JavaScript API)
+  web: ^1.1.0
+
   # Convex backend (HTTP)
   http: ^1.1.0
 

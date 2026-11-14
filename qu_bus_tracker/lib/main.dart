@@ -9,9 +9,17 @@ import 'package:provider/provider.dart';
 import 'gender_selection_screen.dart';
 import 'bus_service.dart';
 import 'convex_bus_service.dart';
+import 'google_maps_web_loader.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Android/iOS read the Maps key from the native manifest, but the web build
+  // needs the Maps JavaScript API in the page before the first GoogleMap is
+  // created. Every live-bus ETA popup hangs off a map marker, so a missing
+  // map used to mean "no ETA on the website" while the APK kept working.
+  await GoogleMapsWebLoader.ensureLoaded();
+
   runApp(const QUBusTrackerApp());
 }
 

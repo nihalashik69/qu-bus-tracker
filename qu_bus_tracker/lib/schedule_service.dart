@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import 'convex_http_client.dart';
+import 'doha_time.dart';
 
 class ScheduleService {
   static final ScheduleService _instance = ScheduleService._internal();
@@ -56,8 +57,7 @@ class ScheduleService {
     final routes = routesMap(routesData);
     if (routes == null) return result;
 
-    final now = DateTime.now();
-    final currentMinutes = now.hour * 60 + now.minute;
+    final currentMinutes = DohaTime.nowMinutesOfDay();
 
     for (final entry in routes.entries) {
       final sortedTimes = parseTimeList(entry.value);
@@ -84,16 +84,11 @@ class ScheduleService {
   }
 
   String formatMinutes(int minutes) {
-    final hours = minutes ~/ 60;
-    final mins = minutes % 60;
-    final period = hours >= 12 ? 'PM' : 'AM';
-    final displayHour = hours > 12 ? hours - 12 : (hours == 0 ? 12 : hours);
-    return '${displayHour.toString()}:${mins.toString().padLeft(2, '0')} $period';
+    return DohaTime.formatMinutesOfDay(minutes);
   }
 
   int getMinutesUntilArrival(int busTime) {
-    final now = DateTime.now();
-    final currentMinutes = now.hour * 60 + now.minute;
+    final currentMinutes = DohaTime.nowMinutesOfDay();
     var diff = busTime - currentMinutes;
     if (diff < 0) diff += 1440;
     return diff;
@@ -101,7 +96,7 @@ class ScheduleService {
 
   /// Scheduled time already passed today — shown as the next day's run.
   bool isTomorrow(int busTimeMinutes) {
-    final currentMinutes = DateTime.now().hour * 60 + DateTime.now().minute;
+    final currentMinutes = DohaTime.nowMinutesOfDay();
     return busTimeMinutes <= currentMinutes;
   }
 

@@ -21,6 +21,7 @@ import 'package:provider/provider.dart';
 import 'bus_models.dart';
 import 'bus_service.dart';
 import 'convex_bus_service.dart';
+import 'google_maps_web_loader.dart';
 import 'schedule_service.dart';
 import 'schedule_arrival_pill.dart';
 import 'live_bus_marker_icon.dart';
@@ -684,20 +685,29 @@ final target =
                                 ? Container(
                                     color: const Color(0xFFE5E7EB),
                                     alignment: Alignment.center,
-                                    child: const Column(
+                                    child: Column(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(
+                                        const Icon(
                                           Icons.map_outlined,
                                           color: Color(0xFF6B7280),
                                           size: 32,
                                         ),
-                                        SizedBox(height: 8),
-                                        Text(
+                                        const SizedBox(height: 8),
+                                        const Text(
                                           'Map is unavailable right now',
                                           style: TextStyle(
                                             color: Color(0xFF4B5563),
                                             fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          GoogleMapsWebLoader.failureHint,
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xFF6B7280),
                                           ),
                                         ),
                                       ],

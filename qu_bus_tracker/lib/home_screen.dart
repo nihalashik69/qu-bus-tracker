@@ -21,6 +21,8 @@ import 'bus_details_screen.dart';
 import 'bus_service.dart';
 import 'bus_models.dart';
 import 'convex_bus_service.dart';
+import 'doha_time.dart';
+import 'google_maps_web_loader.dart';
 import 'location_service.dart';
 import 'maps_config.dart';
 import 'schedule_service.dart';
@@ -53,6 +55,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   Map<String, String?> _stopGenders = {};
   Timer? _clockTimer;
+  Timer? _mapLoadTimer;
+  bool _mapLoadFailed = false;
   String _currentTime = '';
   final ScheduleService _scheduleService = ScheduleService();
   Map<String, List<int>> _stopSchedule = {};
@@ -74,12 +78,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _updateClock() {
-    final now = DateTime.now();
-    final hour = now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
-    final minute = now.minute.toString().padLeft(2, '0');
-    final period = now.hour >= 12 ? 'PM' : 'AM';
     setState(() {
-      _currentTime = '$hour:$minute $period';
+      _currentTime = DohaTime.nowFormatted();
     });
   }
 
@@ -182,6 +182,15 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _updateClock();
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) => _updateClock());
+    // Web-only guard: the Maps JavaScript API can fail (missing or restricted
+    // key), and without a map there are no bus markers and no ETA popups.
+    if (kIsWeb) {
+      _mapLoadTimer = Timer(const Duration(seconds: 8), () {
+        if (mounted && _mapController == null) {
+          setState(() => _mapLoadFailed = true);
+        }
+      });
+    }
     // Listen to details sheet controller to detect when fully closed
     _detailsSheetController.addListener(() {
       if (_detailsSheetController.size <= 0.01) {
@@ -276,6 +285,48 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onMapCreated(GoogleMapController controller) {
     _mapController = controller;
+    _mapLoadTimer?.cancel();
+    if (_mapLoadFailed && mounted) {
+      setState(() => _mapLoadFailed = false);
+    }
+  }
+
+  /// Shown when the Google Maps JavaScript API never produced a map.
+  ///
+  /// Without a map there are no bus markers to tap, so the live-bus ETA card
+  /// can never appear. Say that out loud instead of showing a blank square.
+  Widget _buildMapUnavailablePlaceholder() {
+    return Container(
+      color: const Color(0xFFE5E7EB),
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.map_outlined,
+            color: Color(0xFF6B7280),
+            size: 32,
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Map is unavailable right now',
+            style: TextStyle(
+              color: Color(0xFF4B5563),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            kIsWeb
+                ? GoogleMapsWebLoader.failureHint
+                : 'Live bus ETAs need the map, so they are hidden until it loads.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+          ),
+        ],
+      ),
+    );
   }
 
   // Zoom controls
@@ -753,19 +804,17 @@ onTap: () {
     return BitmapDescriptor.fromBytes(uint8List);
   }
 
-  // Create a responsive bus-stop icon (blue pin with white bus symbol).
+  // Create a bus-stop icon (blue pin with white bus symbol) - larger size
   Future<BitmapDescriptor> _createStopIcon() async {
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
-    final size = (MediaQuery.sizeOf(context).shortestSide * 0.07)
-        .clamp(24.0, 32.0)
-        .toDouble();
+    const size = 128.0;
 
     // Draw blue pin circle
     final pinPaint = Paint()
       ..color = Colors.blue
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(size / 2, size / 2 - 3), size * 0.25, pinPaint);
+    canvas.drawCircle(const Offset(size / 2, size / 2 - 12), 32, pinPaint);
 
     // Draw small white bus rectangle inside the pin
     final busPaint = Paint()
@@ -773,8 +822,8 @@ onTap: () {
       ..style = PaintingStyle.fill;
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromLTWH(size / 2 - size * 0.16, size / 2 - size * 0.19, size * 0.32, size * 0.19),
-        Radius.circular(size * 0.047),
+        Rect.fromLTWH(size / 2 - 20, size / 2 - 24, 40, 24),
+        const Radius.circular(6),
       ),
       busPaint,
     );
@@ -782,9 +831,9 @@ onTap: () {
     // Draw the pin tail (triangle)
     final tailPaint = Paint()..color = Colors.blue;
     final path = Path()
-      ..moveTo(size / 2 - size * 0.125, size / 2 + size * 0.125)
-      ..lineTo(size / 2 + size * 0.125, size / 2 + size * 0.125)
-      ..lineTo(size / 2, size - size * 0.0625)
+      ..moveTo(size / 2 - 16, size / 2 + 16)
+      ..lineTo(size / 2 + 16, size / 2 + 16)
+      ..lineTo(size / 2, size - 8)
       ..close();
     canvas.drawPath(path, tailPaint);
 
@@ -813,7 +862,9 @@ onTap: () {
 
                     return Stack(
                       children: [
-                        GoogleMap(
+                        _mapLoadFailed
+                            ? _buildMapUnavailablePlaceholder()
+                            : GoogleMap(
                           mapType: MapType.hybrid,
                           onMapCreated: _onMapCreated,
                           initialCameraPosition: const CameraPosition(
@@ -886,7 +937,10 @@ onTap: () {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    _currentTime,
+                    // Always Doha time: the timetable is Doha-local, so a
+                    // device in another timezone must not read a different
+                    // clock next to the same "X min" pills.
+                    '$_currentTime Doha',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
@@ -1503,6 +1557,7 @@ onTap: () {
   @override
   void dispose() {
     _clockTimer?.cancel();
+    _mapLoadTimer?.cancel();
     _searchController.dispose();
     _detailsSheetController.dispose();
     _busesListSheetController.dispose();

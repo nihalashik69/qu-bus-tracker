@@ -31,7 +31,31 @@
 
   <title>QU Bus Tracker</title>
   <link rel="manifest" href="manifest.json">
-  <script src="https://maps.googleapis.com/maps/api/js?key=__GOOGLE_MAPS_API_KEY__&libraries=places"></script>
+  <!--
+    Google Maps JavaScript API.
+
+    `__GOOGLE_MAPS_API_KEY__` is replaced by scripts/vercel-build.sh when the
+    Vercel project has GOOGLE_MAPS_API_KEY set. If the placeholder survived
+    (plain `flutter build web`, ZIP upload, GitHub Pages, ...) we must NOT
+    request the API with a bogus key: the map would fail and every live-bus
+    ETA popup would disappear. In that case the bundle injects the script
+    itself from --dart-define=GOOGLE_MAPS_API_KEY (see
+    lib/google_maps_web_loader.dart).
+  -->
+  <script>
+    (function () {
+      var key = "__GOOGLE_MAPS_API_KEY__";
+      if (!key || key.indexOf("__") === 0) {
+        // Placeholder not substituted - let the Flutter bundle load the API.
+        return;
+      }
+      var script = document.createElement("script");
+      script.src =
+        "https://maps.googleapis.com/maps/api/js?key=" +
+        encodeURIComponent(key);
+      document.head.appendChild(script);
+    })();
+  </script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

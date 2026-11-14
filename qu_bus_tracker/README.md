@@ -44,8 +44,9 @@ Replace `YOUR_GOOGLE_MAPS_API_KEY_HERE` in these files:
 **iOS:**
 - `ios/Runner/Info.plist` (line 57)
 
-**Flutter:**
-- `lib/config/maps_config.dart` (line 4)
+**Web:**
+- set `GOOGLE_MAPS_API_KEY` at deploy time (see step 5); the fallback used when
+  it is unset lives in `lib/google_maps_web_loader.dart`
 
 ### 3. Install Dependencies
 
@@ -59,19 +60,42 @@ flutter pub get
 flutter run
 ```
 
-### 5. Deploy the Web App to Vercel
+### 5. Deploy the Web App
 
-Set the Vercel project root directory to `qu_bus_tracker`. The included
-`vercel.json` downloads the pinned Flutter toolchain, builds Flutter Web, and
-serves the generated `build/web` directory.
+The web build needs two things the native builds get for free:
 
-Add these project environment variables in Vercel:
+- `CONVEX_URL` (baked in with `--dart-define`, defaults to the shared
+  deployment in `lib/convex_config.dart`)
+- a **browser** Google Maps JavaScript API key
+
+**Vercel** — set the project root directory to `qu_bus_tracker` and add these
+project environment variables:
 
 - `CONVEX_URL`: the Convex deployment URL
 - `GOOGLE_MAPS_API_KEY`: a browser-restricted Google Maps JavaScript API key
+  (Maps JavaScript API enabled, HTTP referrers restricted to the deployed
+  domains). If this variable is missing the deployment falls back to the key
+  compiled into `lib/google_maps_web_loader.dart`.
 
-The Maps key must have the Maps JavaScript API enabled and should restrict
-HTTP referrers to the deployed Vercel domains.
+`scripts/vercel-build.sh` downloads the pinned Flutter toolchain, runs
+`flutter pub get`, builds with both dart-defines, substitutes the Maps key in
+`build/web/index.html`, and fails the build if the `__GOOGLE_MAPS_API_KEY__`
+placeholder survives.
+
+**Any other host** (GitHub Pages, Netlify drop, static file upload, …) — one
+command is enough, no placeholder substitution required:
+
+```bash
+flutter build web --release \
+  --dart-define=CONVEX_URL=https://your-deployment.convex.cloud \
+  --dart-define=GOOGLE_MAPS_API_KEY=your-browser-maps-key
+```
+
+Then upload `build/web`. `lib/google_maps_web_loader.dart` injects the Maps
+JavaScript API at startup whenever `index.html` did not already load it, so the
+map — and therefore every live-bus ETA popup — works on any deploy path. If the
+map still cannot start, the map area says why (missing key, key rejected for the
+domain, or API unreachable) instead of failing silently.
 
 ## App Structure
 
