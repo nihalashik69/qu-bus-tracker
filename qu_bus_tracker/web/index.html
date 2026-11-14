@@ -34,20 +34,17 @@
   <!--
     Google Maps JavaScript API.
 
-    `__GOOGLE_MAPS_API_KEY__` is replaced by scripts/vercel-build.sh when the
-    Vercel project has GOOGLE_MAPS_API_KEY set. If the placeholder survived
-    (plain `flutter build web`, ZIP upload, GitHub Pages, ...) we must NOT
-    request the API with a bogus key: the map would fail and every live-bus
-    ETA popup would disappear. In that case the bundle injects the script
-    itself from --dart-define=GOOGLE_MAPS_API_KEY (see
-    lib/google_maps_web_loader.dart).
+    The key below is the working project key (the same one used by the Android
+    manifest, the iOS Info.plist and lib/google_maps_web_loader.dart). Keeping
+    it here means a static deploy needs no build step and no Vercel env var.
+    scripts/vercel-build.sh overwrites `__GOOGLE_MAPS_API_KEY__` when that
+    variable IS set, so the deploy can still rotate the key.
   -->
   <script>
     (function () {
       var key = "__GOOGLE_MAPS_API_KEY__";
       if (!key || key.indexOf("__") === 0) {
-        // Placeholder not substituted - let the Flutter bundle load the API.
-        return;
+        key = "AIzaSyB9cEejKh6ckGq0BXgaxDt4bYaXgc8mEAA";
       }
       var script = document.createElement("script");
       script.src =

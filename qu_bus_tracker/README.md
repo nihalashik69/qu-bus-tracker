@@ -72,10 +72,10 @@ The web build needs two things the native builds get for free:
 project environment variables:
 
 - `CONVEX_URL`: the Convex deployment URL
-- `GOOGLE_MAPS_API_KEY`: a browser-restricted Google Maps JavaScript API key
-  (Maps JavaScript API enabled, HTTP referrers restricted to the deployed
-  domains). If this variable is missing the deployment falls back to the key
-  compiled into `lib/google_maps_web_loader.dart`.
+- `GOOGLE_MAPS_API_KEY`: optional override for the browser Maps key. The working
+  key is already committed in `web/index.html` (and in the Dart fallback), so a
+  deployment with no env vars still shows the map. Only set this if you rotate
+  the key.
 
 `scripts/vercel-build.sh` downloads the pinned Flutter toolchain, runs
 `flutter pub get`, builds with both dart-defines, substitutes the Maps key in
